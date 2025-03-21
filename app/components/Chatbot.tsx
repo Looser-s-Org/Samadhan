@@ -221,150 +221,156 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({ onClose }) => {
 
   return (
     <div 
-      ref={chatRef}
-      className="fixed bottom-24 right-6 w-80 h-96 bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl shadow-2xl border border-gray-700 flex flex-col overflow-hidden z-50"
-      style={{
-        animation: "fadeIn 0.3s ease-out forwards",
-      }}
-    >
-      {!apiKeySet ? (
-        <div className="flex items-center justify-center w-full h-full p-4">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-xl border border-gray-700 w-full">
-            <div className="mb-4 flex justify-center">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
+    ref={chatRef}
+    className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1/2 h-1/2 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 backdrop-blur-lg bg-gray-900/60 border border-white/20"
+    style={{
+      animation: "fadeIn 0.5s ease-out forwards",
+      boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+    }}
+  >
+    {!apiKeySet ? (
+      <div className="flex items-center justify-center w-full h-full p-4">
+        <div className="backdrop-blur-md bg-gray-800/70 p-6 rounded-xl shadow-xl border border-white/20 w-full max-w-md transform transition-all duration-300 hover:scale-105">
+          <div className="mb-4 flex justify-center">
+            <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center transform transition-all duration-500 hover:rotate-12">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse">Enter API Key</h2>
+          <form onSubmit={handleSubmitApiKey}>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="w-full p-3 bg-gray-900/70 border border-white/20 rounded-lg mb-4 text-white text-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+              placeholder="API key..."
+            />
+            <button
+              type="submit"
+              className="w-full p-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90 transition-all focus:outline-none text-md hover:shadow-lg hover:shadow-purple-500/30 transform hover:-translate-y-1"
+            >
+              Start Chatting
+            </button>
+          </form>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* Header */}
+        <div className="bg-gray-800/70 p-4 border-b border-white/20 flex items-center justify-between backdrop-blur-md">
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mr-3 transform transition-all duration-300 hover:rotate-12">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">AI Assistant</h1>
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-green-400 mr-2 animate-pulse"></div>
+                <span className="text-gray-300 text-sm">Online</span>
               </div>
             </div>
-            <h2 className="text-lg font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Enter API Key</h2>
-            <form onSubmit={handleSubmitApiKey}>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg mb-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="API key..."
-              />
-              <button
-                type="submit"
-                className="w-full p-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90 transition-all focus:outline-none text-sm"
-              >
-                Start Chatting
-              </button>
-            </form>
           </div>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700/50"
+            aria-label="Close chat"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-      ) : (
-        <>
-          {/* Header */}
-          <div className="bg-gray-800 p-3 border-b border-gray-700 flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mr-2">
+        
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-900/30 backdrop-blur-sm">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`mb-4 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              style={{
+                animation: "slideIn 0.3s ease-out forwards",
+                animationDelay: `${index * 0.1}s`,
+              }}
+            >
+              {msg.role === 'assistant' && (
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-2 self-end shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+              )}
+              <div
+                className={`px-4 py-3 rounded-2xl max-w-[80%] text-md ${
+                  msg.role === 'user'
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-br-none shadow-lg shadow-purple-500/30 transform transition-all duration-300 hover:-translate-y-1'
+                    : 'bg-gray-800/70 text-gray-100 rounded-bl-none border border-white/20 backdrop-blur-md shadow-lg transform transition-all duration-300 hover:-translate-y-1'
+                }`}
+              >
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+                <div className={`text-xs mt-2 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
+                  {formatTime(msg.timestamp)}
+                </div>
+              </div>
+              {msg.role === 'user' && (
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center ml-2 self-end shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex justify-start mb-4" style={{ animation: "fadeIn 0.3s ease-out forwards" }}>
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-2 self-end shadow-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">AI Assistant</h1>
-                <div className="flex items-center">
-                  <div className="h-1.5 w-1.5 rounded-full bg-green-400 mr-1"></div>
-                  <span className="text-gray-400 text-xs">Online</span>
+              <div className="px-4 py-3 rounded-2xl max-w-[80%] bg-gray-800/70 text-gray-100 rounded-bl-none border border-white/20 backdrop-blur-md shadow-lg">
+                <div className="flex space-x-2">
+                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                 </div>
               </div>
             </div>
-            <button 
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="Close chat"
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+        
+        {/* Input */}
+        <div className="bg-gray-800/70 p-4 border-t border-white/20 backdrop-blur-md">
+          <form onSubmit={handleSubmit} className="flex">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1 bg-gray-900/70 text-white p-3 text-md rounded-l-lg focus:outline-none border-y border-l border-white/20 transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              className={`bg-gradient-to-r from-purple-500 to-blue-500 text-white p-3 rounded-r-lg transition-all duration-300 ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-purple-500/30 transform hover:scale-105'
+              }`}
+              disabled={isLoading}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </button>
-          </div>
-          
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 bg-gray-900">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-3 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role === 'assistant' && (
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-1.5 self-end">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                  </div>
-                )}
-                <div
-                  className={`px-3 py-2 rounded-xl max-w-[80%] text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-br-none'
-                      : 'bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
-                  <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-400'}`}>
-                    {formatTime(msg.timestamp)}
-                  </div>
-                </div>
-                {msg.role === 'user' && (
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center ml-1.5 self-end">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex justify-start mb-3">
-                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-1.5 self-end">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                  </svg>
-                </div>
-                <div className="px-3 py-2 rounded-xl max-w-[80%] bg-gray-800 text-gray-100 rounded-bl-none border border-gray-700">
-                  <div className="flex space-x-1.5">
-                    <div className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-pulse"></div>
-                    <div className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="h-1.5 w-1.5 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          
-          {/* Input */}
-          <div className="bg-gray-800 p-3 border-t border-gray-700">
-            <form onSubmit={handleSubmit} className="flex">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 bg-gray-900 text-white p-2 text-sm rounded-l-lg focus:outline-none border border-gray-700"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                className={`bg-gradient-to-r from-purple-500 to-blue-500 text-white p-2 rounded-r-lg ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
-                }`}
-                disabled={isLoading}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
-            </form>
-          </div>
-        </>
-      )}
-    </div>
+          </form>
+        </div>
+      </>
+    )}
+  </div>
+  
   );
 };
 
