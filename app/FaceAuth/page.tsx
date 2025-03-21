@@ -753,21 +753,21 @@ window.location.reload();
         <h2 className="panel-title">Registration</h2>
         <div className="form-group">
         <div className="mb-4">
-              <label htmlFor="username" className="block text-sm font-medium mb-2">Username:</label>
+              <label htmlFor="username" className="input-label">Username:</label>
               <input
                 type="text"
                 id="username"
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="px-4 py-2 border rounded w-full"
+                className="text-input"
               />
             </div>
           <label htmlFor="phoneNumber" className="input-label">Phone Number:</label>
           <input
             type="tel"
             id="phoneNumber"
-            placeholder="Enter your phone number for registration and security alerts"
+            placeholder="Enter your registered phone number"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             className="text-input"
@@ -778,7 +778,7 @@ window.location.reload();
             onClick={() => fileInputRef.current?.click()}
             className="upload-button"
           >
-            Upload Profile Image
+            Upload your Adhaar Card
           </button>
           <input
             type="file"
