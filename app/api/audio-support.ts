@@ -16,6 +16,7 @@ export interface LocalizedSupportResponse extends SupportResponse {
     statusMessage: string;
   };
   detectedLanguage: string;
+  transcriptionConfidence ?:string
 }
 
 // Function to transcribe audio using Groq's Whisper implementation
@@ -371,39 +372,50 @@ async function makePhoneCall(request: SupportRequest, analysis: GroqAnalysisResp
 }
 
 // Main function to handle audio support requests
-export async function submitAudioSupportRequest(request: AudioSupportRequest, previousConversations: string): Promise<LocalizedSupportResponse> {
+export async function submitAudioSupportRequest(
+  request: AudioSupportRequest,
+  previousConversations?: string
+): Promise<LocalizedSupportResponse> {
   try {
     // Generate ticket ID
     const ticketId = `BANK-${Date.now().toString().slice(-6)}`;
-    
+
     // Step 1: Transcribe the audio using Groq's Whisper and detect language
     const transcriptionResult = await transcribeAudioWithGroq(request.audioFile);
-    
     console.log(transcriptionResult.description);
-    
-    // Step 2: Merge previous conversations with new transcription
-    const mergedDescription = `${previousConversations}\n\nNew request: ${transcriptionResult.description}`;
-    
-    console.log(mergedDescription)
-    // Step 3: Create a support request object using the merged data
+
+    // Convert detected language from Arabic to Hindi if applicable
+    let detectedLanguage = transcriptionResult.detectedLanguage;
+    if (detectedLanguage === 'ar') {
+      detectedLanguage = 'hi';
+    }
+
+    // Step 2: Create description based on whether previousConversations exists
+    let description: string = previousConversations
+      ? `${previousConversations}\n\nNew request: ${transcriptionResult.description}`
+      : transcriptionResult.description;
+
+    console.log(description);
+
+    // Step 3: Create a support request object using the appropriate description
     const supportRequest: SupportRequest = {
       name: request.name,
       email: request.email,
       phone: request.phone,
       subject: transcriptionResult.subject,
-      description: mergedDescription // Using the merged text
+      description,
     };
-    
-    // Step 3: Analyze the request with Groq, ensuring response is in the detected language
-    const analysis = await analyzeWithGroq(supportRequest, transcriptionResult.detectedLanguage);
-    
-    // Step 4: Generate localized messages
-    const localizedMessages = await generateLocalizedMessages(ticketId, analysis, transcriptionResult.detectedLanguage);
-    
-    // Step 5: Save data to Google Sheets
+
+    // Step 4: Analyze the request with Groq, ensuring response is in the detected language
+    const analysis = await analyzeWithGroq(supportRequest, detectedLanguage);
+
+    // Step 5: Generate localized messages
+    const localizedMessages = await generateLocalizedMessages(ticketId, analysis, detectedLanguage);
+
+    // Step 6: Save data to Google Sheets
     const sheetResult = await saveToGoogleSheets(supportRequest, analysis, ticketId);
-    
-    // Step 6: ALWAYS make phone call using Bland.ai
+
+    // Step 7: ALWAYS make phone call using Bland.ai
     let callResult = false;
     try {
       callResult = await makePhoneCall(supportRequest, analysis);
@@ -411,14 +423,19 @@ export async function submitAudioSupportRequest(request: AudioSupportRequest, pr
       console.error('Phone call failed, but continuing with process:', callError);
       // Don't throw here, continue with process even if call fails
     }
-    
+
     // Return success response with ticket ID, analysis, and the original request data
     return {
       success: sheetResult,
       ticketId,
       analysis,
       requestData: supportRequest,
-      detectedLanguage: transcriptionResult.detectedLanguage // Adding detected language to the response
+      detectedLanguage,
+      localizedInfo: {
+        ticketMessage: localizedMessages.ticketMessage,
+        nextSteps: localizedMessages.nextSteps,
+        statusMessage: localizedMessages.statusMessage,
+      },
     };
   } catch (error) {
     console.error('Error submitting audio support request:', error);
@@ -430,11 +447,15 @@ export async function submitAudioSupportRequest(request: AudioSupportRequest, pr
         email: request.email,
         phone: request.phone,
         subject: '',
-        description: ''
+        description: '',
       },
-      error: error instanceof Error ? error.message : 'An unknown error occurred'
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+      detectedLanguage: 'Unknown',
+      localizedInfo: {
+        ticketMessage: 'Unable to process your request at this time.',
+        nextSteps: 'Please try again later.',
+        statusMessage: 'Failed',
+      },
     };
   }
 }
-
-export { SupportResponse };
