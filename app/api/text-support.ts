@@ -7,6 +7,7 @@ export interface SupportRequest {
   phone: string;
   subject: string;
   description: string;
+  detectedLanguage?: 'en' | 'hi' | 'ur' | 'ar' | string;
 }
 
 export interface GroqAnalysisResponse {
