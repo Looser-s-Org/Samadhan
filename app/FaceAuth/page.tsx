@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react';
 import Script from 'next/script';
+import axios from 'axios';
 
 // Define types for our component
 interface UserData {
@@ -8,6 +9,7 @@ interface UserData {
   faceDescriptor: number[];
   imagePath: string;
   enhancedImagePath?: string;
+  phone?: string; // Added phone number field
 }
 
 interface EnhancedImageResult {
@@ -16,12 +18,21 @@ interface EnhancedImageResult {
   vectors?: number[];
 }
 
+// New interface for Bland API call tracking
+interface AuthFailureLog {
+  timestamp: number;
+  username: string;
+  attempts: number;
+  notificationSent: boolean;
+}
+
 const EnhancedFaceAuth: React.FC = () => {
   // State variables
   const [isModelLoaded, setIsModelLoaded] = useState<boolean>(false);
   const [registeredUsername, setRegisteredUsername] = useState<string | null>(null);
   const [registeredFaceDescriptor, setRegisteredFaceDescriptor] = useState<Float32Array | null>(null);
   const [username, setUsername] = useState<string>('');
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [loginUsername, setLoginUsername] = useState<string>('');
   const [statusMessage, setStatusMessage] = useState<string>('Loading models...');
   const [statusType, setStatusType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
@@ -30,6 +41,9 @@ const EnhancedFaceAuth: React.FC = () => {
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
   const [enhancedImage, setEnhancedImage] = useState<EnhancedImageResult | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
+  const [isCallingUser, setIsCallingUser] = useState<boolean>(false);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -72,10 +86,14 @@ const EnhancedFaceAuth: React.FC = () => {
           setRegisteredUsername(userData.username);
           setRegisteredFaceDescriptor(new Float32Array(userData.faceDescriptor));
           setLoginUsername(userData.username);
+          setPhoneNumber(userData.phone || '');
           updateStatus(`User "${userData.username}" already registered. Ready for authentication.`, 'success');
           setShowAuthentication(true);
           startVideo();
         }
+        
+        // Load failed authentication attempts
+        loadFailedAuthAttempts();
       } catch (error: any) {
         console.error('Error loading models:', error);
         updateStatus(`Failed to load models: ${error.message}`, 'error');
@@ -98,6 +116,45 @@ const EnhancedFaceAuth: React.FC = () => {
       }
     };
   }, []);
+
+  // Load failed authentication attempts from localStorage
+  const loadFailedAuthAttempts = () => {
+    try {
+      const failedAuthData = localStorage.getItem('failedAuthAttempts');
+      if (failedAuthData) {
+        const authData: AuthFailureLog = JSON.parse(failedAuthData);
+        
+        // Only use data if it's from the last 30 minutes
+        const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
+        if (authData.timestamp > thirtyMinutesAgo) {
+          setFailedAttempts(authData.attempts);
+          setLastNotificationTime(authData.notificationSent ? authData.timestamp : 0);
+        } else {
+          // Reset if older than 30 minutes
+          localStorage.removeItem('failedAuthAttempts');
+          setFailedAttempts(0);
+          setLastNotificationTime(0);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading failed authentication data:', error);
+    }
+  };
+
+  // Save failed authentication attempts to localStorage
+  const saveFailedAuthAttempts = (attempts: number, notificationSent: boolean) => {
+    try {
+      const authData: AuthFailureLog = {
+        timestamp: Date.now(),
+        username: registeredUsername || '',
+        attempts: attempts,
+        notificationSent: notificationSent
+      };
+      localStorage.setItem('failedAuthAttempts', JSON.stringify(authData));
+    } catch (error) {
+      console.error('Error saving failed authentication data:', error);
+    }
+  };
 
   // Helper function to update status with appropriate styling
   const updateStatus = (message: string, type: 'info' | 'success' | 'warning' | 'error') => {
@@ -307,6 +364,11 @@ const EnhancedFaceAuth: React.FC = () => {
       updateStatus('Please enter a username!', 'warning');
       return;
     }
+
+    if (!phoneNumber.trim()) {
+      updateStatus('Please enter a phone number for security notifications!', 'warning');
+      return;
+    }
     
     try {
       setIsRegistering(true);
@@ -337,15 +399,21 @@ const EnhancedFaceAuth: React.FC = () => {
       const trimmedUsername = username.trim();
       setRegisteredUsername(trimmedUsername);
       
-      // Store face descriptor and username in localStorage
+      // Store face descriptor, username, and phone number in localStorage
       const userData: UserData = {
         username: trimmedUsername,
         faceDescriptor: Array.from(results.descriptor),
         imagePath: enhancedImage ? enhancedImage.originalUrl : URL.createObjectURL(fileInputRef.current.files[0]),
-        enhancedImagePath: enhancedImage ? enhancedImage.outputUrl : undefined
+        enhancedImagePath: enhancedImage ? enhancedImage.outputUrl : undefined,
+        phone: phoneNumber.trim() // Store phone number
       };
       
       localStorage.setItem('registeredUser', JSON.stringify(userData));
+      
+      // Reset failed attempts when registering
+      setFailedAttempts(0);
+      setLastNotificationTime(0);
+      saveFailedAuthAttempts(0, false);
       
       updateStatus(`User "${trimmedUsername}" registered successfully with enhanced image! Ready for authentication.`, 'success');
       setIsRegistering(false);
@@ -369,6 +437,111 @@ const EnhancedFaceAuth: React.FC = () => {
       img.onerror = reject;
       img.src = url;
     });
+  };
+
+  // Make call using Bland API to notify user of suspicious login attempts
+  const notifyUserViaBland = async () => {
+    if (isCallingUser) return false;
+    
+    try {
+      setIsCallingUser(true);
+      updateStatus('Security alert: Contacting account owner...', 'warning');
+      
+      const storedUser = localStorage.getItem('registeredUser');
+      if (!storedUser) {
+        throw new Error('User data not found');
+      }
+      
+      const userData: UserData = JSON.parse(storedUser);
+      if (!userData.phone) {
+        throw new Error('No phone number registered for notifications');
+      }
+      
+      // Create support request object
+      const request = {
+        name: userData.username,
+        phone: userData.phone,
+        subject: "Security Alert: Unauthorized Access Attempt",
+        description: `There have been ${failedAttempts} failed login attempts to your account in the last 30 minutes. This might be a security breach attempt.`
+      };
+      
+      // Create analysis response object
+      const analysis = {
+        solution: "We detected suspicious login activity on your account. As a security measure, we're calling to verify if this is you trying to log in. If not, we recommend changing your password immediately.",
+        language: "en" // Default to English
+      };
+      
+      const result = await makePhoneCall(request, analysis);
+      
+      if (result) {
+        updateStatus(`Security alert sent to registered phone number. The account owner has been notified.`, 'warning');
+        setLastNotificationTime(Date.now());
+        saveFailedAuthAttempts(failedAttempts, true);
+        return true;
+      } else {
+        updateStatus('Failed to send security notification. Please try again later.', 'error');
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Error making notification call:', error);
+      updateStatus(`Error sending notification: ${error.message}`, 'error');
+      return false;
+    } finally {
+      setIsCallingUser(false);
+    }
+  };
+  
+  // Implementation of Bland AI phone call function
+  const makePhoneCall = async (request: any, analysis: any): Promise<boolean> => {
+    try {
+      const blandApiKey = process.env.NEXT_PUBLIC_BLAND_AI_API_KEY;
+      
+      if (!blandApiKey) {
+        throw new Error('Bland.ai API key is not defined');
+      }
+      
+      // Format the phone number to E.164 format
+      const formattedPhone = request.phone.replace(/\D/g, '');
+      if (!formattedPhone || formattedPhone.length < 10) {
+        throw new Error('Invalid phone number');
+      }
+      
+      const phoneWithCountryCode = formattedPhone.startsWith('1') ? 
+        `+${formattedPhone}` : `+91${formattedPhone}`;
+      
+      // Headers for Bland.ai API
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${blandApiKey}`
+      };
+      
+      // Enhanced Bland.ai API call configuration
+      const data = {
+        phone_number: phoneWithCountryCode,
+        task: `You're a bank security system. The customer ${request.name} has suspicious login activity: ${request.description}. Based on our analysis, please inform them: ${analysis.solution}. Call them to notify about this security concern. Make it clear this is an automated security call. Speak to them in ${analysis.language}. Make it Natural but urgent.`,
+        voice: "June",
+        wait_for_greeting: false,
+        record: true,
+        amd: false,
+        answered_by_enabled: false,
+        noise_cancellation: false,
+        interruption_threshold: 100,
+        block_interruptions: false,
+        max_duration: 12,
+        model: "base",
+        language: "en", // Default to English
+        background_track: "none",
+        endpoint: "https://api.bland.ai",
+        voicemail_action: "hangup"
+      };
+      
+      const response = await axios.post('https://api.bland.ai/v1/calls', data, { headers });
+      
+      return !!response.data.call_id;
+    } catch (error) {
+      console.error('Error making phone call with Bland.ai:', error);
+      return false;
+    }
   };
 
   // Authenticate user against registered face
@@ -420,12 +593,35 @@ const EnhancedFaceAuth: React.FC = () => {
       if (distance < 0.47) {
         // Scenario 1: Strong match - Successfully authenticated
         updateStatus(`Authentication successful! Welcome, ${registeredUsername}!`, 'success');
+        
+        // Reset failed attempts on successful login
+        setFailedAttempts(0);
+        saveFailedAuthAttempts(0, false);
       } else if (distance < 0.54) {
         // Scenario 2: Partial match - Need better photo quality
-        updateStatus(`Partial match detected. Please update your profile photo with your Aadhar card for better recognition.`, 'warning');
+        updateStatus(`Partial match detected. Please update your profile photo with better quality for improved recognition.`, 'warning');
+        
+        // Increment failed attempts but don't trigger security alert yet
+        const newFailedAttempts = failedAttempts + 1;
+        setFailedAttempts(newFailedAttempts);
+        saveFailedAuthAttempts(newFailedAttempts, false);
       } else {
         // Scenario 3: No match - Authentication failed
         updateStatus('Authentication failed! Face not recognized.', 'error');
+        
+        // Increment failed attempts
+        const newFailedAttempts = failedAttempts + 1;
+        setFailedAttempts(newFailedAttempts);
+        
+        // Check if we should send a security notification
+        // Criteria: 3+ failed attempts AND no notification in the last 30 minutes
+        const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000;
+        if (newFailedAttempts >= 3 && lastNotificationTime < thirtyMinutesAgo) {
+          // Call the Bland API to notify the user
+          notifyUserViaBland();
+        } else {
+          saveFailedAuthAttempts(newFailedAttempts, lastNotificationTime >= thirtyMinutesAgo);
+        }
       }
       
       setIsAuthenticating(false);
@@ -440,8 +636,11 @@ const EnhancedFaceAuth: React.FC = () => {
   const resetRegistration = async () => {
     try {
       localStorage.removeItem('registeredUser');
+      localStorage.removeItem('failedAuthAttempts');
       setRegisteredFaceDescriptor(null);
       setRegisteredUsername(null);
+      setFailedAttempts(0);
+      setLastNotificationTime(0);
       
       // Stop webcam if it's running
       stopVideo();
@@ -450,6 +649,7 @@ const EnhancedFaceAuth: React.FC = () => {
       if (fileInputRef.current) fileInputRef.current.value = '';
       setUsername('');
       setLoginUsername('');
+      setPhoneNumber('');
       if (previewImageRef.current) previewImageRef.current.classList.add('hidden');
       if (enhancedImageRef.current) enhancedImageRef.current.classList.add('hidden');
       
@@ -498,6 +698,21 @@ const EnhancedFaceAuth: React.FC = () => {
           {statusMessage}
         </div>
         
+        {/* Security alert badge when there are failed attempts */}
+        {failedAttempts > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <span className="font-medium">Security Alert:</span> {failedAttempts} failed authentication attempt{failedAttempts !== 1 ? 's' : ''} detected.
+              {failedAttempts >= 3 && lastNotificationTime > 0 && (
+                <span className="block text-sm mt-1">Account owner has been notified via phone call.</span>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Two-button flow for starting registration or authentication */}
         <div className="flex gap-4 mb-6">
           <button 
@@ -521,7 +736,7 @@ const EnhancedFaceAuth: React.FC = () => {
           </button>
         </div>
         
-        {/* Registration Section */}
+        
         {!showAuthentication && (
           <div className="bg-white p-6 rounded-xl shadow-md mb-6">
             <h2 className="text-2xl font-bold mb-4">Registration</h2>
@@ -533,6 +748,17 @@ const EnhancedFaceAuth: React.FC = () => {
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                className="px-4 py-2 border rounded w-full"
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="phoneNumber" className="block text-sm font-medium mb-2">Phone Number:</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                placeholder="Enter your phone number for security alerts"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 className="px-4 py-2 border rounded w-full"
               />
             </div>
@@ -592,7 +818,7 @@ const EnhancedFaceAuth: React.FC = () => {
               
               <button
                 onClick={registerUser}
-                disabled={isRegistering || !isModelLoaded || !username.trim() || isEnhancing}
+                disabled={isRegistering || !isModelLoaded || !username.trim() || isEnhancing || !phoneNumber.trim()}
                 className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition duration-300 disabled:bg-gray-400"
               >
                 {isRegistering ? 'Processing...' : 'Register Face'}
@@ -645,7 +871,7 @@ const EnhancedFaceAuth: React.FC = () => {
             <div className="flex gap-4">
               <button
                 onClick={authenticateUser}
-                disabled={isAuthenticating}
+                disabled={isAuthenticating || isCallingUser}
                 className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition duration-300 disabled:bg-gray-400"
               >
                 {isAuthenticating ? 'Processing...' : 'Authenticate'}
@@ -666,6 +892,7 @@ const EnhancedFaceAuth: React.FC = () => {
             <li>Use a clear, well-lit image for registration</li>
             <li>Ensure your face is fully visible during authentication</li>
             <li>Remove glasses or other accessories that might obstruct facial features</li>
+            <li>When multiple failed attempts are detected, a security call will be made to the registered phone number</li>
           </ul>
         </div>
       </div>
