@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useRef, useEffect } from 'react';
 import Script from 'next/script';
@@ -913,3 +914,4 @@ window.location.reload();
 };
 
 export default EnhancedFaceAuth;
+
