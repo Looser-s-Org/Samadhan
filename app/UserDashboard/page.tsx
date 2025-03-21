@@ -283,7 +283,7 @@ if (!mounted) {
                   <span>Money Transfer</span>
                 </button>
                 <button
-                  onClick={() => handleOptionClick('/InvestmentRecommender')}
+                  onClick={() => handleOptionClick('/InvestmentAdvisor')}
                   className="w-full flex items-center gap-2 bg-white/10 hover:bg-white/20 transition-colors px-4 py-3 !rounded-button whitespace-nowrap backdrop-blur-sm border border-white/5">
                   <i className="fas fa-chart-pie text-[#B026FF]"></i>
                   <span>Investment Recommender</span>
