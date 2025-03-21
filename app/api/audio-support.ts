@@ -386,7 +386,7 @@ export async function submitAudioSupportRequest(
 
     // Convert detected language from Arabic to Hindi if applicable
     let detectedLanguage = transcriptionResult.detectedLanguage;
-    if (detectedLanguage === 'ar') {
+    if (detectedLanguage === 'ar' || detectedLanguage === 'ur') {
       detectedLanguage = 'hi';
     }
 
