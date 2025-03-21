@@ -431,6 +431,11 @@ export async function submitAudioSupportRequest(
       analysis,
       requestData: supportRequest,
       detectedLanguage,
+      localizedInfo: {
+        ticketMessage: localizedMessages.ticketMessage,
+        nextSteps: localizedMessages.nextSteps,
+        statusMessage: localizedMessages.statusMessage,
+      },
     };
   } catch (error) {
     console.error('Error submitting audio support request:', error);
@@ -445,6 +450,12 @@ export async function submitAudioSupportRequest(
         description: '',
       },
       error: error instanceof Error ? error.message : 'An unknown error occurred',
+      detectedLanguage: 'Unknown',
+      localizedInfo: {
+        ticketMessage: 'Unable to process your request at this time.',
+        nextSteps: 'Please try again later.',
+        statusMessage: 'Failed',
+      },
     };
   }
 }
