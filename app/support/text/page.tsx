@@ -74,7 +74,12 @@ export default function SupportFormPage() {
   const requestData = getRequestData();
 
   return (
-    <div className="support-container">
+    <div className="support-container" style={{ 
+      backgroundImage: "url('/AudioTextbg.JPG')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+  }}>
       <h1 className="support-title">Submit a Support Request</h1>
       
       {response ? (

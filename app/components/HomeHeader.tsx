@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ heroBackgroundUrl }) => {
           <nav className="flex items-center justify-between mb-16">
             <div className="text-2xl font-bold text-white flex items-center gap-2">
               <i className="fas fa-cube text-[#00F0FF]"></i>
-              <span>NeoBank</span>
+              <span>Samadhan</span>
             </div>
             <div className="flex items-center gap-8">
               {['Features', 'Security', 'Support', 'About'].map((item) => (
