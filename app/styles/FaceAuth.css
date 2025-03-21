@@ -1,28 +1,28 @@
 /* Base Variables with Extended Color Palette */
 :root {
-  /* Primary Colors */
+  
   --primary-color: #00b3ff;
   --primary-light: #33c5ff;
   --primary-dark: #008ac2;
   
-  /* Secondary Colors */
+ 
   --secondary-color: #7240ff;
   --secondary-light: #8b66ff;
   --secondary-dark: #5c33cc;
   
-  /* Accent Colors */
+  
   --accent-color: #36a3ff;
   --accent-light: #5eb7ff;
   --accent-dark: #2980d9;
   
-  /* Background Colors */
+  
   --dark-bg: #161616;
   --darker-bg: #0d0d0d;
   --darkest-bg: #080808;
   --glass-bg: rgba(23, 25, 35, 0.6);
   --glass-bg-lighter: rgba(35, 38, 50, 0.4);
   
-  /* Glow Effects */
+
   --border-glow: 0 0 5px rgba(0, 179, 255, 0.5);
   --border-glow-intense: 0 0 8px rgba(0, 179, 255, 0.7);
   --text-glow: 0 0 2px rgba(0, 179, 255, 0.3);
@@ -30,7 +30,7 @@
   --button-glow: 0 0 8px rgba(0, 179, 255, 0.6);
   --button-glow-intense: 0 0 12px rgba(0, 179, 255, 0.8);
   
-  /* Status Colors */
+  
   --error-color: #ff4a6e;
   --error-light: #ff7591;
   --error-dark: #d43a5a;
@@ -47,26 +47,26 @@
   --info-light: #8cc7ff;
   --info-dark: #4a9ae0;
   
-  /* Border Radii */
+  
   --panel-radius: 12px;
   --panel-radius-large: 16px;
   --input-radius: 6px;
   --input-radius-large: 8px;
   
-  /* Typography */
+
   --font-primary: 'Inter', system-ui, sans-serif;
   
-  /* Transitions */
+
   --transition-fast: 0.2s ease;
   --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.5s cubic-bezier(0.65, 0, 0.35, 1);
   
-  /* Shadows */
+
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.25);
   
-  /* Z-index layers */
+  
   --z-background: -10;
   --z-base: 1;
   --z-above: 10;
