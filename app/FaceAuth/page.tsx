@@ -2,7 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Script from 'next/script';
 import axios from 'axios';
-
+import "@/app/styles/FaceAuth.css"
+import { useRouter } from 'next/navigation';
+import toast, { Toaster } from 'react-hot-toast';
 // Define types for our component
 interface UserData {
   username: string;
@@ -44,6 +46,7 @@ const EnhancedFaceAuth: React.FC = () => {
   const [failedAttempts, setFailedAttempts] = useState<number>(0);
   const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
   const [isCallingUser, setIsCallingUser] = useState<boolean>(false);
+  const router=useRouter();
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -61,6 +64,7 @@ const EnhancedFaceAuth: React.FC = () => {
         
         // Check if face-api is available
         if (typeof (window as any).faceapi === 'undefined') {
+          window.location.reload();
           throw new Error('Face API library not loaded. Check your internet connection or try a different browser.');
         }
         
@@ -552,6 +556,10 @@ const EnhancedFaceAuth: React.FC = () => {
     }
     
     if (!isModelLoaded) {
+window.location.reload();
+
+    // Example usage: Refresh the page every 5 seconds
+    // autoRefresh(5000);
       updateStatus('Face API models not loaded. Please wait or refresh the page.', 'error');
       return;
     }
@@ -591,12 +599,18 @@ const EnhancedFaceAuth: React.FC = () => {
 
       // Here is the updated function with 3 different authentication scenarios based on match distance
       if (distance < 0.47) {
+        const toastId =toast.loading("Authenticating...");
+        setTimeout(() => {
+          toast.success("you will be redirected to the dashboard",{id:toastId})
+        }, 2000);
         // Scenario 1: Strong match - Successfully authenticated
-        updateStatus(`Authentication successful! Welcome, ${registeredUsername}!`, 'success');
-        
+        setTimeout(() => {
+          updateStatus(`Authentication successful! Welcome, ${registeredUsername}!`, 'success');
+        router.push("/UserDashboard")
         // Reset failed attempts on successful login
         setFailedAttempts(0);
         saveFailedAuthAttempts(0, false);
+        }, 3000);
       } else if (distance < 0.54) {
         // Scenario 2: Partial match - Need better photo quality
         updateStatus(`Partial match detected. Please update your profile photo with better quality for improved recognition.`, 'warning');
@@ -677,70 +691,68 @@ const EnhancedFaceAuth: React.FC = () => {
   // Render the component
   return (
     <>
-      <Script
-        src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"
-        strategy="beforeInteractive"
-        onLoad={() => {
-          console.log("Face API script loaded successfully");
-        }}
-        onError={(e) => {
-          console.error("Error loading Face API script:", e);
-        }}
-      />
-      <div className="container mx-auto p-6 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6">Enhanced Face Authentication System</h1>
-        <div id="status" className={`p-4 mb-6 rounded ${
-          statusType === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
-          statusType === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-          statusType === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-          'bg-blue-50 text-blue-700 border border-blue-200'
-        }`}>
-          {statusMessage}
+  <Script
+    src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"
+    strategy="beforeInteractive"
+    onLoad={() => {
+      console.log("Face API script loaded successfully");
+    }}
+    onError={(e) => {
+      console.error("Error loading Face API script:", e);
+    }}
+  />
+  <div className="face-auth-container">
+    <h1 className="face-auth-title">Enhanced Face Authentication System</h1>
+    <div id="status" className={`status-message status-${statusType}`}>
+      {statusMessage}
+    </div>
+    
+    {/* Security alert badge when there are failed attempts */}
+    {failedAttempts > 0 && (
+      <div className="security-alert">
+        <svg xmlns="http://www.w3.org/2000/svg" className="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div className="alert-content">
+          <span className="alert-title">Security Alert:</span> {failedAttempts} failed authentication attempt{failedAttempts !== 1 ? 's' : ''} detected.
+          {failedAttempts >= 3 && lastNotificationTime > 0 && (
+            <span className="notification-info">Account owner has been notified via phone call.</span>
+          )}
         </div>
-        
-        {/* Security alert badge when there are failed attempts */}
-        {failedAttempts > 0 && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div>
-              <span className="font-medium">Security Alert:</span> {failedAttempts} failed authentication attempt{failedAttempts !== 1 ? 's' : ''} detected.
-              {failedAttempts >= 3 && lastNotificationTime > 0 && (
-                <span className="block text-sm mt-1">Account owner has been notified via phone call.</span>
-              )}
-            </div>
-          </div>
-        )}
-        
-        {/* Two-button flow for starting registration or authentication */}
-        <div className="flex gap-4 mb-6">
-          <button 
-            onClick={() => setShowAuthentication(false)}
-            className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-300"
-          >
-            Register Face
-          </button>
-          <button 
-            onClick={() => {
-              if (registeredUsername) {
-                setShowAuthentication(true);
-                startVideo();
-              } else {
-                updateStatus('No user registered! Please register first.', 'warning');
-              }
-            }}
-            className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition duration-300"
-          >
-            Authenticate Face
-          </button>
-        </div>
-        
-        
-        {!showAuthentication && (
-          <div className="bg-white p-6 rounded-xl shadow-md mb-6">
-            <h2 className="text-2xl font-bold mb-4">Registration</h2>
-            <div className="mb-4">
+      </div>
+    )}
+    
+    {/* Toggle buttons for authentication/registration */}
+    <div className="action-buttons">
+      <div className={`toggle-container ${showAuthentication ? 'authenticate-active' : ''}`}>
+        <button 
+          onClick={() => setShowAuthentication(false)}
+          className={`register-button ${!showAuthentication ? 'active' : ''}`}
+        >
+          Register Face
+        </button>
+        <button 
+          onClick={() => {
+            if (registeredUsername) {
+              setShowAuthentication(true);
+              startVideo();
+            } else {
+              updateStatus('No user registered! Please register first.', 'warning');
+            }
+          }}
+          className={`authenticate-button ${showAuthentication ? 'active' : ''}`}
+        >
+          Authenticate Face
+        </button>
+      </div>
+    </div>
+    
+    
+    {!showAuthentication && (
+      <div className="registration-panel">
+        <h2 className="panel-title">Registration</h2>
+        <div className="form-group">
+        <div className="mb-4">
               <label htmlFor="username" className="block text-sm font-medium mb-2">Username:</label>
               <input
                 type="text"
@@ -751,152 +763,152 @@ const EnhancedFaceAuth: React.FC = () => {
                 className="px-4 py-2 border rounded w-full"
               />
             </div>
-            <div className="mb-4">
-              <label htmlFor="phoneNumber" className="block text-sm font-medium mb-2">Phone Number:</label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                placeholder="Enter your phone number for security alerts"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="px-4 py-2 border rounded w-full"
-              />
-            </div>
-            <div className="mb-4">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-300 mb-4"
-              >
-                Upload Profile Image
-              </button>
-              <input
-                type="file"
-                id="imageUpload"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              
-              {isEnhancing && (
-                <div className="my-4 p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded">
-                  <div className="flex items-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="font-medium">Enhancing your image for better face recognition...</span>
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                <div className="border rounded p-4 bg-gray-50">
-                  <h3 className="font-medium mb-3">Original Image</h3>
-                  <div className="bg-gray-100 rounded overflow-hidden h-64 flex items-center justify-center">
-                    <img
-                      id="uploadPreview"
-                      className="hidden max-h-full max-w-full object-contain"
-                      alt="Original"
-                      ref={previewImageRef}
-                    />
-                  </div>
-                </div>
-                
-                <div className="border rounded p-4 bg-gray-50">
-                  <h3 className="font-medium mb-3">Enhanced Image (4x)</h3>
-                  <div className="bg-gray-100 rounded overflow-hidden h-64 flex items-center justify-center">
-                    <img
-                      id="enhancedPreview"
-                      className="hidden max-h-full max-w-full object-contain"
-                      alt="Enhanced"
-                      ref={enhancedImageRef}
-                    />
-                  </div>
-                </div>
+          <label htmlFor="phoneNumber" className="input-label">Phone Number:</label>
+          <input
+            type="tel"
+            id="phoneNumber"
+            placeholder="Enter your phone number for registration and security alerts"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className="text-input"
+          />
+        </div>
+        <div className="upload-section">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="upload-button"
+          >
+            Upload Profile Image
+          </button>
+          <input
+            type="file"
+            id="imageUpload"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            className="hidden-input"
+          />
+          
+          {isEnhancing && (
+            <div className="enhancing-indicator">
+              <div className="loading-indicator">
+                <svg className="spinner" viewBox="0 0 24 24">
+                  <circle className="spinner-track" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="spinner-path" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="enhancing-text">Enhancing your image for better face recognition...</span>
               </div>
-              
-              <button
-                onClick={registerUser}
-                disabled={isRegistering || !isModelLoaded || !username.trim() || isEnhancing || !phoneNumber.trim()}
-                className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition duration-300 disabled:bg-gray-400"
-              >
-                {isRegistering ? 'Processing...' : 'Register Face'}
-              </button>
-              
-              {enhancedImage && (
-                <div className="mt-4">
-                  <a 
-                    href={enhancedImage.outputUrl} 
-                    download={`enhanced_${username.trim() || 'profile'}.jpg`}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-300 inline-flex items-center"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                    Download Enhanced Image
-                  </a>
-                </div>
-              )}
+            </div>
+          )}
+          
+          <div className="image-preview-container">
+            <div className="original-image-container">
+              <h3 className="image-title">Original Image</h3>
+              <div className="image-display">
+                <img
+                  id="uploadPreview"
+                  className="preview-image"
+                  alt="Original"
+                  ref={previewImageRef}
+                />
+              </div>
+            </div>
+            
+            <div className="enhanced-image-container">
+              <h3 className="image-title">Enhanced Image (4x)</h3>
+              <div className="image-display">
+                <img
+                  id="enhancedPreview"
+                  className="preview-image"
+                  alt="Enhanced"
+                  ref={enhancedImageRef}
+                />
+              </div>
             </div>
           </div>
-        )}
-        
-        {/* Authentication Section */}
-        {showAuthentication && (
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <h2 className="text-2xl font-bold mb-4">Authentication</h2>
-            <div className="mb-4">
-              <label htmlFor="loginUsername" className="block text-sm font-medium mb-2">Username:</label>
-              <input
-                type="text"
-                id="loginUsername"
-                placeholder="Enter your username"
-                value={loginUsername}
-                onChange={(e) => setLoginUsername(e.target.value)}
-                className="px-4 py-2 border rounded w-full"
-              />
-            </div>
-            <div className="mb-4 bg-black rounded overflow-hidden">
-              <video
-                id="video"
-                width="640"
-                height="480"
-                autoPlay
-                muted
-                ref={videoRef}
-                className="w-full h-auto"
-              />
-            </div>
-            <div className="flex gap-4">
-              <button
-                onClick={authenticateUser}
-                disabled={isAuthenticating || isCallingUser}
-                className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition duration-300 disabled:bg-gray-400"
+          
+          <button
+            onClick={registerUser}
+            disabled={isRegistering || !isModelLoaded || isEnhancing || !phoneNumber.trim()}
+            className="register-face-button"
+          >
+            {isRegistering ? 'Processing...' : 'Register Face'}
+          </button>
+          
+          {enhancedImage && (
+            <div className="download-section">
+              <a 
+                href={enhancedImage.outputUrl} 
+                download={`enhanced_${phoneNumber.trim() || 'profile'}.jpg`}
+                className="download-button"
               >
-                {isAuthenticating ? 'Processing...' : 'Authenticate'}
-              </button>
-              <button 
-                onClick={resetRegistration}
-                className="px-6 py-3 bg-red-600 text-white rounded hover:bg-red-700 transition duration-300"
-              >
-                Reset Registration
-              </button>
+                <svg xmlns="http://www.w3.org/2000/svg" className="download-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                Download Enhanced Image
+              </a>
             </div>
-          </div>
-        )}
-        
-        <div className="mt-6 text-sm text-gray-500">
-          <p>This application uses enhanced face recognition technology with 4x upscaling. For optimal results:</p>
-          <ul className="list-disc ml-5 mt-2">
-            <li>Use a clear, well-lit image for registration</li>
-            <li>Ensure your face is fully visible during authentication</li>
-            <li>Remove glasses or other accessories that might obstruct facial features</li>
-            <li>When multiple failed attempts are detected, a security call will be made to the registered phone number</li>
-          </ul>
+          )}
         </div>
       </div>
-    </>
+    )}
+    
+    {/* Authentication Section */}
+    {showAuthentication && (
+      <div className="authentication-panel">
+        <h2 className="panel-title">Authentication</h2>
+        <div className="form-group">
+          <label htmlFor="loginUsername" className="input-label">Username:</label>
+          <input
+            type="tel"
+            id="loginUsername"
+            placeholder="Enter your registered phone number"
+            value={loginUsername}
+            onChange={(e) => setLoginUsername(e.target.value)}
+            className="text-input"
+          />
+        </div>
+        <div className="video-container">
+          <video
+            id="video"
+            width="640"
+            height="480"
+            autoPlay
+            muted
+            ref={videoRef}
+            className="webcam-video"
+          />
+        </div>
+        <div className="auth-buttons">
+          <button
+            onClick={authenticateUser}
+            disabled={isAuthenticating || isCallingUser}
+            className="authenticate-face-button"
+          >
+            {isAuthenticating ? 'Processing...' : 'Authenticate'}
+          </button>
+          <button 
+            onClick={resetRegistration}
+            className="reset-button"
+          >
+            Reset Registration
+          </button>
+        </div>
+      </div>
+    )}
+    
+    <div className="info-section">
+      <p>This application uses enhanced face recognition technology with 4x upscaling. For optimal results:</p>
+      <ul className="info-list">
+        <li>Use a clear, well-lit image for registration</li>
+        <li>Ensure your face is fully visible during authentication</li>
+        <li>Remove glasses or other accessories that might obstruct facial features</li>
+        <li>When multiple failed attempts are detected, a security call will be made to the registered phone number</li>
+      </ul>
+    </div>
+  </div>
+  <Toaster position='top-right'/>
+</>
   );
 };
 

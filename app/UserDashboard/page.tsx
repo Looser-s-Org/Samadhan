@@ -268,10 +268,10 @@ className="w-full flex items-center gap-2 bg-[#2A2A2F] hover:bg-[#3A3A3F] transi
 <span>Money Transfer</span>
 </button>
 <button
-onClick={() => handleOptionClick('/InvestmentRecommender')}
+onClick={() => handleOptionClick('/InvestmentAdvisor')}
 className="w-full flex items-center gap-2 bg-[#2A2A2F] hover:bg-[#3A3A3F] transition-colors px-4 py-3 !rounded-button whitespace-nowrap">
 <i className="fas fa-chart-pie text-[#B026FF]"></i>
-<span>Investment Recommender</span>
+<span>Investment Advisor</span>
 </button>
 <button 
 onClick={() => handleOptionClick('/Loans')}
