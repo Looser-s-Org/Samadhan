@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ heroBackgroundUrl }) => {
                 </button>
               ))}
               <button 
-               onClick={() => handleOptionClick('/Login')}
+               onClick={() => handleOptionClick('/FaceAuth')}
               className="bg-[#00F0FF] text-black px-6 py-2 font-semibold hover:bg-[#32FFBD] transition-colors cursor-pointer whitespace-nowrap !rounded-button">
                 Sign In
               </button>
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ heroBackgroundUrl }) => {
             </p>
             <div className="flex gap-4">
               <button
-                onClick={() => handleOptionClick('/Login')}
+                onClick={() => handleOptionClick('/FaceAuth')}
               className="bg-[#BA01FF] px-8 py-3 font-semibold hover:bg-[#32FFBD] transition-colors cursor-pointer whitespace-nowrap !rounded-button">
                 Get Started
               </button>
