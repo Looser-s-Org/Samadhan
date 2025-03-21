@@ -415,12 +415,16 @@ const EnhancedFaceAuth: React.FC = () => {
       // Compare with registered face descriptor (which came from the enhanced image)
       const distance = faceapi.euclideanDistance(results.descriptor, registeredFaceDescriptor);
       console.log('Face match distance:', distance);
-      
-      // Slightly adjusted threshold for the 4x enhancement
-      const threshold = 0.48; // Adjusted from 0.5 to be slightly stricter
-      if (distance < threshold) {
+
+      // Here is the updated function with 3 different authentication scenarios based on match distance
+      if (distance < 0.47) {
+        // Scenario 1: Strong match - Successfully authenticated
         updateStatus(`Authentication successful! Welcome, ${registeredUsername}!`, 'success');
+      } else if (distance < 0.54) {
+        // Scenario 2: Partial match - Need better photo quality
+        updateStatus(`Partial match detected. Please update your profile photo with your Aadhar card for better recognition.`, 'warning');
       } else {
+        // Scenario 3: No match - Authentication failed
         updateStatus('Authentication failed! Face not recognized.', 'error');
       }
       
