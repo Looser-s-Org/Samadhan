@@ -14,7 +14,16 @@ export default function SupportChoicePage() {
   };
 
   return (
-    <div className="support-container">
+    <div 
+      className="support-container"
+      style={{
+        backgroundImage: "url('/supportbg.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed"
+      }}
+    >
       <h1 className="support-title">How would you like to contact support?</h1>
       
       <div className="support-options-wrapper">
@@ -35,7 +44,7 @@ export default function SupportChoicePage() {
             Start Voice Call
           </button>
         </div>
-
+  
         {/* Text Option */}
         <div 
           className={`support-option ${hoveredOption === 'text' ? 'support-option-hovered' : ''}`}

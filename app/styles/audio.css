@@ -11,7 +11,7 @@
   --text-glow: 0 0 2px rgba(0, 179, 255, 0.3);
   --button-glow: 0 0 8px rgba(0, 179, 255, 0.6);
   --error-color: #ff4a6e;
-  --success-color:#6ab5ff;
+  --success-color:#6ab5ff; 
   --info-color: #6ab5ff;
 }
 
@@ -495,4 +495,4 @@
     /* No animation, just static */
     transform: scale(1);
     border-radius: 50%;
-  }
+  } 

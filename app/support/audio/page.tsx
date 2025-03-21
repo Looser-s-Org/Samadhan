@@ -4,12 +4,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { submitAudioSupportRequest, AudioSupportRequest, SupportResponse } from '@/app/api/audio-support';
 import { Mic, MicOff, Square, RotateCcw, Send } from 'lucide-react';
-import {fetchLatestCustomerTicket} from '../..//api/get-queries'
-
 
 export default function AudioSupportPage() {
   const router = useRouter();
-  
+   
   // Audio recording states
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -205,11 +203,8 @@ const detectVoiceActivity = () => {
         phone,
         audioFile: audioBlob
       };
-
-
-      const lastGeneratedTicket =await fetchLatestCustomerTicket()
-      console.log(lastGeneratedTicket);
-      const result = await submitAudioSupportRequest(request, lastGeneratedTicket.Query);
+      
+      const result = await submitAudioSupportRequest(request);
       
       if (result.success) {
         setResponse(result);
@@ -230,7 +225,12 @@ const detectVoiceActivity = () => {
   };
   
   return (
-    <div className="support-container">
+    <div className="support-container" style={{ 
+      backgroundImage: "url('/AudioTextbg.JPG')",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat'
+  }}>
       <h1 className="support-title">Voice Support Request</h1>
       
       {response ? (
