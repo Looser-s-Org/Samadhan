@@ -352,7 +352,7 @@
 
   .form-actions {
     flex-direction: column;
-    gap: 1rem;
+    gap: 1rem; 
   }
 
   .back-button,
