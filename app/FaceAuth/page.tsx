@@ -616,10 +616,22 @@ window.location.reload();
         // Scenario 2: Partial match - Need better photo quality
         updateStatus(`Partial match detected. Please update your profile photo with better quality for improved recognition.`, 'warning');
         
+        const toastId =toast.loading("Authenticating...");
+        setTimeout(() => {
+          toast.success("you will be redirected to the dashboard",{id:toastId})
+        }, 2000);
+        // Scenario 1: Strong match - Successfully authenticated
+        setTimeout(() => {
+          updateStatus(`Authentication successful! Welcome, ${registeredUsername}!`, 'success');
+        router.push("/UserDashboard")
+        // Reset failed attempts on successful login
+        setFailedAttempts(0);
+        saveFailedAuthAttempts(0, false);
+        }, 3000);
         // Increment failed attempts but don't trigger security alert yet
-        const newFailedAttempts = failedAttempts + 1;
-        setFailedAttempts(newFailedAttempts);
-        saveFailedAuthAttempts(newFailedAttempts, false);
+        // const newFailedAttempts = failedAttempts + 1;
+        // setFailedAttempts(newFailedAttempts);
+        // saveFailedAuthAttempts(newFailedAttempts, false);
       } else {
         // Scenario 3: No match - Authentication failed
         updateStatus('Authentication failed! Face not recognized.', 'error');
