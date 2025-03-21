@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   submitAudioSupportRequest,
   AudioSupportRequest,
-  SupportResponse,
+ 
 } from "@/app/api/audio-support";
+import { SupportResponse } from "@/app/api/text-support";
 import { Mic, MicOff, Square, RotateCcw, Send } from "lucide-react";
 import { fetchLatestCustomerTicket } from "@/app/api/get-queries";
 
