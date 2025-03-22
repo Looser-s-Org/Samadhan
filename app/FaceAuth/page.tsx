@@ -612,7 +612,7 @@ window.location.reload();
         setFailedAttempts(0);
         saveFailedAuthAttempts(0, false);
         }, 3000);
-      } else if (distance < 0.54) {
+      } else if (distance < 0.56) {
         // Scenario 2: Partial match - Need better photo quality
         updateStatus(`Partial match detected. Please update your profile photo with better quality for improved recognition.`, 'warning');
         
