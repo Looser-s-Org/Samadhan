@@ -64,7 +64,10 @@ const EnhancedFaceAuth: React.FC = () => {
         console.log("Starting to load face-api.js models...");
         
         // Check if face-api is available
-        // @ts-ignore
+        interface WindowWithFaceApi extends Window {
+  faceapi?: any; // Or better, define the actual type of faceapi
+}
+
         if (typeof (window as any).faceapi === 'undefined') {
           window.location.reload();
           throw new Error('Face API library not loaded. Check your internet connection or try a different browser.');
