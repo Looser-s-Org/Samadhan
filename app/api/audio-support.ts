@@ -415,14 +415,14 @@ export async function submitAudioSupportRequest(
     // Step 6: Save data to Google Sheets
     const sheetResult = await saveToGoogleSheets(supportRequest, analysis, ticketId);
 
-    // Step 7: ALWAYS make phone call using Bland.ai
-    let callResult = false;
-    try {
-      callResult = await makePhoneCall(supportRequest, analysis);
-    } catch (callError) {
-      console.error('Phone call failed, but continuing with process:', callError);
-      // Don't throw here, continue with process even if call fails
-    }
+    // // Step 7: ALWAYS make phone call using Bland.ai
+    // let callResult = false;
+    // try {
+    //   callResult = await makePhoneCall(supportRequest, analysis);
+    // } catch (callError) {
+    //   console.error('Phone call failed, but continuing with process:', callError);
+    //   // Don't throw here, continue with process even if call fails
+    // }
 
     // Return success response with ticket ID, analysis, and the original request data
     return {
