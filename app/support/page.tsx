@@ -14,7 +14,7 @@ export default function SupportChoicePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 text-white relative"
       style={{
-        backgroundImage: "url('https://static.vecteezy.com/system/resources/previews/023/221/109/non_2x/banking-and-finance-concept-digital-connect-system-financial-and-banking-technology-with-integrated-circles-glowing-line-icons-and-on-blue-background-design-vector.jpg')",
+        backgroundImage: "url('/support_bg.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

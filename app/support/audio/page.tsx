@@ -252,7 +252,7 @@ export default function AudioSupportPage() {
     <div
       className="support-container"
       style={{
-        backgroundImage: "url('/AudioTextbg.JPG')",
+        backgroundImage: "url('/audio.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -261,234 +261,262 @@ export default function AudioSupportPage() {
       <h1 className="support-title">Voice Support Request</h1>
 
       {response ? (
-        <div className="response-container">
-          <h2 className="response-header">Request Submitted Successfully</h2>
-
-          <div className="ticket-section">
-            <h3 className="section-title">Ticket Information</h3>
-            <div className="ticket-info">
-              <p>
-                <strong>Ticket ID:</strong> {response.ticketId}
-              </p>
-            </div>
-          </div>
-
-          <div className="understanding-section">
-            <h3 className="section-title">We Understood Your Request As</h3>
-            <div className="understanding-content">
-              <p>
-                <strong>Subject:</strong>{" "}
-                {response.requestData.subject || "Not detected"}
-              </p>
-              <p className="description-label">
-                <strong>Description:</strong>
-              </p>
-              <p className="description-content">
-                {response.requestData.description ||
-                  "We could not transcribe your audio clearly. A support agent will listen to your recording."}
-              </p>
-            </div>
-          </div>
-
-          <div className="solution-section">
-            <h3 className="section-title">Our Response</h3>
-            <div className="solution-content">
-              <p>
-                {response.analysis?.solution ||
-                  "Thank you for contacting us. We've received your request and will respond shortly."}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-gray-900 rounded-lg p-4 md:p-6 border border-gray-700">
-            <h3 className="text-lg font-medium text-gray-100 border-b border-gray-700 pb-2 mb-3">
-              Next Steps
-            </h3>
-            <div className="w-full flex flex-col sm:flex-row gap-4 sm:justify-around items-center mt-4">
-              <button
-              onClick={()=>{
-                setResponse(null)
-                setAudioBlob(null)
-                setAudioUrl(null)
-                setnewResponse(false)
-              }}
-              className="w-full sm:w-auto bg-blue-800 hover:bg-blue-900 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                  />
-                </svg>
-                Carry On Conversation
-              </button>
-              <button
-              onClick={()=>{
-                setResponse(null)
-                setAudioBlob(null)
-                setAudioUrl(null)
-                setnewResponse(true)
-              }}
-              className="w-full sm:w-auto bg-gray-900 border border-blue-700 hover:bg-gray-800 text-blue-400 font-medium py-2 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                New Conversation
-              </button>
-            </div>
-          </div>
-
-          <div className="action-footer">
-            <button onClick={handleBackToHome} className="back-button">
-              Back to Support Options
-            </button>
-          </div>
-        </div>
+       <div className="response-container backdrop-filter backdrop-blur-lg bg-white/15 dark:bg-black/20 border border-white/20 dark:border-white/10 rounded-xl shadow-lg p-6 relative overflow-hidden">
+       {/* Glass highlight effect */}
+       <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/25 rounded-full mix-blend-overlay"></div>
+       
+       <h2 className="response-header text-gray-800 dark:text-white relative z-10">Request Submitted Successfully</h2>
+     
+       <div className="ticket-section backdrop-filter backdrop-blur-md bg-white/20 dark:bg-white/5 rounded-lg p-4 mb-4 border border-white/20 dark:border-white/5 shadow-sm relative">
+         <h3 className="section-title text-gray-700 dark:text-gray-200">Ticket Information</h3>
+         <div className="ticket-info">
+           <p>
+             <strong>Ticket ID:</strong> {response.ticketId}
+           </p>
+         </div>
+       </div>
+     
+       <div className="understanding-section backdrop-filter backdrop-blur-md bg-white/20 dark:bg-white/5 rounded-lg p-4 mb-4 border border-white/20 dark:border-white/5 shadow-sm relative">
+         <h3 className="section-title text-gray-700 dark:text-gray-200">We Understood Your Request As</h3>
+         <div className="understanding-content">
+           <p>
+             <strong>Subject:</strong>{" "}
+             {response.requestData.subject || "Not detected"}
+           </p>
+           <p className="description-label">
+             <strong>Description:</strong>
+           </p>
+           <p className="description-content">
+             {response.requestData.description ||
+               "We could not transcribe your audio clearly. A support agent will listen to your recording."}
+           </p>
+         </div>
+       </div>
+     
+       <div className="solution-section backdrop-filter backdrop-blur-md bg-white/20 dark:bg-white/5 rounded-lg p-4 mb-4 border border-white/20 dark:border-white/5 shadow-sm relative">
+         <h3 className="section-title text-gray-700 dark:text-gray-200">Our Response</h3>
+         <div className="solution-content">
+           <p>
+             {response.analysis?.solution ||
+               "Thank you for contacting us. We've received your request and will respond shortly."}
+           </p>
+         </div>
+       </div>
+     
+       <div className="backdrop-filter backdrop-blur-md bg-black/30 rounded-lg p-4 md:p-6 border border-white/10 shadow-sm relative">
+         <h3 className="text-lg font-medium text-white border-b border-white/10 pb-2 mb-3">
+           Next Steps
+         </h3>
+         <div className="w-full flex flex-col sm:flex-row gap-4 sm:justify-around items-center mt-4">
+           <button
+           onClick={()=>{
+             setResponse(null)
+             setAudioBlob(null)
+             setAudioUrl(null)
+             setnewResponse(false)
+           }}
+           className="w-full sm:w-auto bg-blue-600/80 hover:bg-blue-700/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center backdrop-blur-sm shadow-sm">
+             <svg
+               xmlns="http://www.w3.org/2000/svg"
+               className="h-5 w-5 mr-2"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke="currentColor"
+             >
+               <path
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+                 strokeWidth={2}
+                 d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+               />
+             </svg>
+             Carry On Conversation
+           </button>
+           <button
+           onClick={()=>{
+             setResponse(null)
+             setAudioBlob(null)
+             setAudioUrl(null)
+             setnewResponse(true)
+           }}
+           className="w-full sm:w-auto bg-transparent border border-blue-500/50 hover:border-blue-600/70 text-blue-400 font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center backdrop-blur-sm shadow-sm">
+             <svg
+               xmlns="http://www.w3.org/2000/svg"
+               className="h-5 w-5 mr-2"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke="currentColor"
+             >
+               <path
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+                 strokeWidth={2}
+                 d="M12 4v16m8-8H4"
+               />
+             </svg>
+             New Conversation
+           </button>
+         </div>
+       </div>
+     
+       <div className="mt-4 w-full flex justify-center">
+         <button 
+           onClick={handleBackToHome} 
+           className="bg-transparent border border-blue-500/50 hover:border-blue-600/70 text-blue-400 font-medium py-2 px-6 rounded-lg transition-all duration-300 backdrop-blur-sm shadow-sm relative z-10">
+           Back to Support Options
+         </button>
+       </div>
+       
+       {/* Bottom glass highlight effect */}
+       <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-300/20 rounded-full mix-blend-overlay"></div>
+     </div>
       ) : (
-        <div className="form-container">
-          {error && <div className="error-message">{error}</div>}
-
-          <div className="recording-section">
-            <p className="instruction-text">
-              Record your support request and our team will get back to you
-              quickly.
-            </p>
-
-            <div className="recorder-container">
-              <div
-                className={`recorder-circle ${isRecording ? "recording" : ""} ${
-                  audioUrl ? "recorded" : ""
-                }`}
-              >
+        <div className="relative  bg-gradient-to-br from-black via-blue-900 to-black">
+        {/* Optional subtle pattern overlay */}
+        <div className="absolute inset-0 z-0 opacity-10" 
+             style={{ backgroundImage: "url('https://cdnjs.cloudflare.com/ajax/libs/pattern.css/1.0.0/pattern.svg')", backgroundSize: "cover" }}>
+        </div>
+        
+        {/* Glassmorphism Container */}
+        <div className="relative z-10 mx-auto max-w-xl px-4 py-6 rounded-2xl">
+          <div className="overflow-hidden rounded-3xl border border-blue-400/20 bg-blue-900/20 p-8 shadow-xl backdrop-blur-xl">
+            {/* Subtle glow effects */}
+            <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl"></div>
+            <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl"></div>
+            
+            {error && (
+              <div className="mb-6 rounded-xl bg-red-900/20 p-4 text-red-200 backdrop-blur-sm">
+                <p className="font-medium">{error}</p>
+              </div>
+            )}
+      
+            <div className="mb-8 text-center">
+              <h2 className="mb-2 text-2xl font-bold text-white">Voice Support</h2>
+              <p className="text-lg font-light text-blue-100/90">
+                Record your support request and our team will get back to you quickly.
+              </p>
+            </div>
+      
+            <div className="flex flex-col items-center">
+              <div className={`group relative mb-6 flex h-40 w-40 items-center justify-center rounded-full border border-blue-300/30 bg-blue-800/20 shadow-lg backdrop-blur-md transition-all duration-300 ${
+                isRecording ? "bg-blue-700/30 ring-4 ring-blue-500/50" : ""
+              } ${audioUrl ? "bg-blue-600/20" : ""}`}>
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600/20 to-blue-400/10 opacity-70 blur-xl"></div>
+                
                 {/* Voice responsive ring - only show when recording */}
                 {isRecording && (
-                  <div
-                    className={`voice-responsive-ring ${
-                      voiceActive ? "active" : "idle"
-                    }`}
+                  <div className={`absolute inset-0 rounded-full border-4 ${
+                    voiceActive ? "border-blue-400/70" : "border-blue-400/30"
+                  } transition-all duration-100`}
                     style={{
-                      // Optionally adjust intensity based on voice volume
-                      borderWidth: voiceActive
-                        ? `${4 + voiceIntensity / 25}px`
-                        : "4px",
-                    }}
-                  ></div>
+                      borderWidth: voiceActive ? `${4 + voiceIntensity / 25}px` : "4px",
+                    }}>
+                  </div>
                 )}
-
-                {isRecording && <div className="pulse-overlay"></div>}
-
-                {/* Rest of your existing recorder circle content */}
+      
+                {isRecording && <div className="absolute inset-0 animate-pulse rounded-full bg-blue-500/20"></div>}
+      
+                {/* Content inside circle */}
                 {isRecording ? (
-                  <div className="recording-indicator">
-                    <div className="timer-display">
+                  <div className="z-10 text-center">
+                    <div className="mb-1 text-2xl font-semibold text-white">
                       {formatTime(recordingDuration)}
                     </div>
-                    <MicOff size={40} className="mic-icon-off" />
+                    <MicOff size={36} className="mx-auto text-white" />
                   </div>
                 ) : audioUrl ? (
-                  <div className="recorded-indicator">
-                    <p className="recorded-text">Recording saved</p>
-                    <p className="duration-text">
+                  <div className="z-10 text-center">
+                    <p className="mb-1 text-lg font-semibold text-white">Recording saved</p>
+                    <p className="text-md text-blue-100/80">
                       {formatTime(recordingDuration)}
                     </p>
                   </div>
                 ) : (
-                  <Mic size={40} className="mic-icon" />
+                  <Mic size={48} className="z-10 text-white/90" />
                 )}
               </div>
-
-              <div className="control-buttons">
+      
+              <div className="mt-4 flex flex-wrap justify-center gap-4">
                 {!isRecording && !audioUrl && (
                   <button
                     type="button"
                     onClick={startRecording}
-                    className="start-button"
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-3 text-lg font-medium text-white shadow-lg transition-all duration-300 hover:shadow-blue-500/25 active:scale-95"
                   >
-                    <Mic size={18} />
+                    <Mic size={20} />
                     Start Recording
                   </button>
                 )}
-
+      
                 {isRecording && (
                   <button
                     type="button"
                     onClick={stopRecording}
-                    className="stop-button"
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-700 to-blue-900 px-6 py-3 text-lg font-medium text-white shadow-lg transition-all duration-300 hover:shadow-blue-500/25 active:scale-95"
                   >
-                    <Square size={18} />
+                    <Square size={20} />
                     Stop Recording
                   </button>
                 )}
-
+      
                 {audioUrl && (
                   <>
                     <button
                       type="button"
                       onClick={resetRecording}
-                      className="reset-button"
+                      className="flex items-center gap-2 rounded-full bg-blue-950/50 px-6 py-3 text-lg font-medium text-white backdrop-blur-md transition-all duration-300 hover:bg-blue-900/50 active:scale-95"
                     >
-                      <RotateCcw size={18} />
+                      <RotateCcw size={20} />
                       Reset
                     </button>
-
+      
                     <button
                       type="button"
                       onClick={submitRecording}
                       disabled={isSubmitting}
-                      className={`send-button ${isSubmitting ? "sending" : ""}`}
+                      className={`flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-3 text-lg font-medium text-white shadow-lg transition-all duration-300 hover:shadow-blue-500/25 active:scale-95 ${
+                        isSubmitting ? "opacity-70" : ""
+                      }`}
                     >
-                      <Send size={18} />
+                      <Send size={20} />
                       {isSubmitting ? "Sending..." : "Send"}
                     </button>
                   </>
                 )}
               </div>
             </div>
-          </div>
-
-          {audioUrl && (
-            <div className="playback-section">
-              <h3 className="playback-title">Your Recording</h3>
-              <div className="audio-player-container">
-                <audio src={audioUrl} controls className="audio-player" />
+      
+            {audioUrl && (
+              <div className="mt-10 overflow-hidden rounded-2xl bg-blue-900/20 p-6 backdrop-blur-md">
+                <h3 className="mb-4 text-center text-xl font-semibold text-white">Your Recording</h3>
+                <div className="w-full rounded-xl bg-black/20 p-2">
+                  <audio src={audioUrl} controls className="w-full" />
+                </div>
               </div>
+            )}
+      
+            <div className="mt-10 border-t border-blue-400/10 pt-6 text-center">
+              <p className="mb-4 text-sm leading-relaxed text-blue-100/70">
+                By submitting a voice request, you agree to our terms of service
+                and privacy policy. We'll call you back as soon as possible to
+                help with your issue.
+              </p>
+      
+              <button
+                type="button"
+                onClick={handleBackToHome}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-800/30 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-blue-700/30"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Support Options
+              </button>
             </div>
-          )}
-
-          <div className="footer-section">
-            <p className="terms-text">
-              By submitting a voice request, you agree to our terms of service
-              and privacy policy. We'll call you back as soon as possible to
-              help with your issue.
-            </p>
-
-            <button
-              type="button"
-              onClick={handleBackToHome}
-              className="back-link"
-            >
-              Back to Support Options
-            </button>
           </div>
         </div>
+      </div>
       )}
     </div>
   );
