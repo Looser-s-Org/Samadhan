@@ -4,7 +4,7 @@ import { enhanceImage, isImageSuitableForFaceRecognition, getFacePhotoRecommenda
 import LoadingIndicator from '@/app/components/LoadingIndicator';
 import LocalStorageService from '@/app/api/LocalStorageService';
 import ImprovedFaceApiService from '@/app/api/FaceApiService';
-import { detectAadhaarCard } from '@/app/api/Verification'; // Import our Aadhaar verification utility
+import { detectAadhaarCard } from '@/app/api/Verification';
 
 // Define types 
 interface EnhancedImageResult {
@@ -42,6 +42,7 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
   const previewImageRef = useRef<HTMLImageElement>(null);
   const enhancedImageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   
   // Component state
   const [isEnhancing, setIsEnhancing] = useState<boolean>(false);
@@ -62,6 +63,11 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
   } | null>(null);
   const [isVerifyingAadhaar, setIsVerifyingAadhaar] = useState<boolean>(false);
   const [isAadhaarCard, setIsAadhaarCard] = useState<boolean | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [animationStage, setAnimationStage] = useState<string>('idle');
+  const [showCelebration, setShowCelebration] = useState<boolean>(false);
+  const [scanningText, setScanningText] = useState<string>('');
+  const [animationComplete, setAnimationComplete] = useState<boolean>(false);
 
   // Effect to clean up object URLs when component unmounts
   useEffect(() => {
@@ -79,6 +85,49 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
     const recommendations = getFacePhotoRecommendations();
     setPhotoRecommendations(recommendations);
   }, []);
+
+  // Effect for typing animation in scanning text
+  useEffect(() => {
+    if (isVerifyingAadhaar) {
+      const phrases = [
+        "Scanning Neural Patterns...", 
+        "Verifying Identity...",
+        "Analyzing Aadhaar Data...",
+        "Ensuring Document Integrity..."
+      ];
+      
+      let currentPhraseIndex = 0;
+      let currentCharIndex = 0;
+      let isDeleting = false;
+      
+      const typeText = () => {
+        const currentPhrase = phrases[currentPhraseIndex];
+        
+        if (isDeleting) {
+          setScanningText(currentPhrase.substring(0, currentCharIndex - 1));
+          currentCharIndex--;
+          
+          if (currentCharIndex === 0) {
+            isDeleting = false;
+            currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+          }
+        } else {
+          setScanningText(currentPhrase.substring(0, currentCharIndex + 1));
+          currentCharIndex++;
+          
+          if (currentCharIndex === currentPhrase.length) {
+            isDeleting = true;
+            setTimeout(() => {}, 1000); // Hold for 1 second before deleting
+          }
+        }
+      };
+      
+      const interval = setInterval(typeText, 100);
+      return () => clearInterval(interval);
+    } else {
+      setScanningText('');
+    }
+  }, [isVerifyingAadhaar]);
 
   // Function to validate image before processing
   const validateImage = (file: File): boolean => {
@@ -98,89 +147,126 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
     return true;
   };
 
+  // Function to handle drag events
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (validateImage(file)) {
+        await processFile(file);
+      }
+    }
+  };
+
   // Function to verify if the uploaded image is an Aadhaar card
   const verifyAadhaarCard = async (file: File): Promise<boolean> => {
     try {
       setIsVerifyingAadhaar(true);
+      setAnimationStage('scanning');
       updateStatus("Verifying Aadhaar card...", "info");
       
       // Call our Aadhaar verification utility function
       const isValidAadhaar = await detectAadhaarCard(file);
       
+      // Simulate a slightly longer processing time for better UX
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       if (isValidAadhaar) {
+        setAnimationStage('success');
+        setShowCelebration(true);
+        setTimeout(() => setShowCelebration(false), 3000);
         updateStatus("Valid Aadhaar card detected.", "success");
         setIsAadhaarCard(true);
       } else {
+        setAnimationStage('error');
+        setTimeout(() => setAnimationStage('idle'), 2000);
         updateStatus("This doesn't appear to be an Aadhaar card. Please upload a valid Aadhaar card.", "error");
         setIsAadhaarCard(false);
       }
       
+      setAnimationComplete(true);
+      setTimeout(() => setAnimationComplete(false), 1000);
       return isValidAadhaar;
     } catch (error) {
       console.error("Error verifying Aadhaar card:", error);
+      setAnimationStage('error');
+      setTimeout(() => setAnimationStage('idle'), 2000);
       updateStatus("Error verifying Aadhaar card. Please try again.", "error");
       setIsAadhaarCard(false);
       return false;
     } finally {
-      setIsVerifyingAadhaar(false);
+      setTimeout(() => {
+        setIsVerifyingAadhaar(false);
+      }, 1000);
     }
+  };
+
+  // Function to process the uploaded file
+  const processFile = async (file: File) => {
+    if (!validateImage(file)) {
+      return;
+    }
+    
+    // Verify if the uploaded image is an Aadhaar card
+    const isValidAadhaar = await verifyAadhaarCard(file);
+    
+    // If not a valid Aadhaar card, don't proceed with processing
+    if (!isValidAadhaar) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+    
+    setSelectedFile(file);
+    setEnhancementAttempts(0); // Reset enhancement attempts counter
+    setFaceDetected(null); // Reset face detection status
+    setFaceQualityScore(null); // Reset quality score
+    setFaceConfidence(null); // Reset confidence score
+    setSuitabilityResult(null); // Reset suitability result
+    onFileSelected(file); // Pass the file to parent component
+    
+    // Display preview image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (previewImageRef.current && e.target?.result) {
+        previewImageRef.current.src = e.target.result as string;
+        previewImageRef.current.classList.remove('hidden');
+        
+        // Clear previous enhanced image if any
+        if (enhancedImageRef.current) {
+          enhancedImageRef.current.classList.add('hidden');
+        }
+        setEnhancedImage(null);
+        
+        // Check if we can detect faces in the original image
+        if (isModelLoaded && ImprovedFaceApiService.areModelsLoaded()) {
+          checkForFaces(previewImageRef.current);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Start enhancement process
+    handleEnhancement(file);
   };
 
   // Function to handle the initial image upload
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      
-      if (!validateImage(file)) {
-        // Reset the input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        return;
-      }
-      
-      // Verify if the uploaded image is an Aadhaar card
-      const isValidAadhaar = await verifyAadhaarCard(file);
-      
-      // If not a valid Aadhaar card, don't proceed with processing
-      if (!isValidAadhaar) {
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        return;
-      }
-      
-      setSelectedFile(file);
-      setEnhancementAttempts(0); // Reset enhancement attempts counter
-      setFaceDetected(null); // Reset face detection status
-      setFaceQualityScore(null); // Reset quality score
-      setFaceConfidence(null); // Reset confidence score
-      setSuitabilityResult(null); // Reset suitability result
-      onFileSelected(file); // Pass the file to parent component
-      
-      // Display preview image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if (previewImageRef.current && e.target?.result) {
-          previewImageRef.current.src = e.target.result as string;
-          previewImageRef.current.classList.remove('hidden');
-          
-          // Clear previous enhanced image if any
-          if (enhancedImageRef.current) {
-            enhancedImageRef.current.classList.add('hidden');
-          }
-          setEnhancedImage(null);
-          
-          // Check if we can detect faces in the original image
-          if (isModelLoaded && ImprovedFaceApiService.areModelsLoaded()) {
-            checkForFaces(previewImageRef.current);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-      
-      // Start enhancement process
-      handleEnhancement(file);
+      await processFile(file);
     }
   };
 
@@ -436,6 +522,8 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
     }
   };
 
+  
+
   // Our own registration handler that stores face data
   const registerUserWithFaceData = async (imageData: EnhancedImageResult) => {
     if (processingRegistration) return;
@@ -456,7 +544,7 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
         registeredAt: new Date().toISOString(),
         faceQualityScore: quality,
         recommendedThreshold,
-        isVerifiedAadhaar: isAadhaarCard || false // Add Aadhaar verification status
+        isVerifiedAadhaar: isAadhaarCard || false
       };
       
       // Log the face descriptors and threshold for debugging
@@ -468,14 +556,18 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
       // Save to local storage
       LocalStorageService.saveUserData(userData);
       
-      // Show success message
+      // Show success message with celebration animation
+      setAnimationStage('registered');
       updateStatus('Face data saved! Proceeding with registration...', 'success');
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
       
       // Call parent's register function now that we've saved the face data
       parentRegisterUser();
     } catch (error) {
       console.error('Error during registration:', error);
       updateStatus('Registration failed. Please try again.', 'error');
+      setAnimationStage('error');
     } finally {
       setProcessingRegistration(false);
     }
@@ -512,6 +604,8 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
     }
   };
 
+  
+
   // Function to generate quality label based on score
   const getQualityLabel = (score: number): {label: string, color: string} => {
     if (score >= 0.8) return { label: "Excellent", color: "text-green-600" };
@@ -530,181 +624,293 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
            (enhancedImage !== null || selectedFile !== null);
   };
 
+  // Function to render scanning animation
+  const renderScanningAnimation = () => {
+    return (
+      <div className="scanning-animation w-full h-full absolute top-0 left-0 flex flex-col items-center justify-center z-10">
+        <div className="relative w-full max-w-xs">
+          <div className="scanning-line bg-cyan-400 h-1 w-full absolute left-0 animate-scanline"></div>
+          <div className="typing-text text-center mt-4 h-6 text-cyan-400 font-orbitron">
+            {scanningText}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Function to render success animation
+  const renderSuccessAnimation = () => {
+    return (
+      <div className="success-animation absolute inset-0 flex items-center justify-center z-20">
+        <div className="success-icon relative flex items-center justify-center">
+          <div className="absolute w-16 h-16 bg-cyan-400 rounded-full opacity-20 animate-ping"></div>
+          <div className="absolute w-14 h-14 bg-cyan-500 rounded-full opacity-30 animate-pulse"></div>
+          <svg className="w-10 h-10 text-cyan-500 z-10 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+    );
+  };
+
+  // Function to render error animation
+  const renderErrorAnimation = () => {
+    return (
+      <div className="error-animation absolute inset-0 flex items-center justify-center z-20">
+        <div className="error-icon relative flex items-center justify-center">
+          <div className="absolute w-16 h-16 bg-red-400 rounded-full opacity-20 animate-ping"></div>
+          <div className="absolute w-14 h-14 bg-red-500 rounded-full opacity-30 animate-pulse"></div>
+          <svg className="w-10 h-10 text-red-500 z-10 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="registration-panel bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Registration</h2>
+    <div className="registration-panel">
+      {/* Futuristic Background Elements */}
+      <div className="background-elements">
+        <div className="circuit-pattern"></div>
+        <div className="top-highlight"></div>
+        <div className="bottom-highlight"></div>
+        <div className="holographic-particles"></div>
+      </div>
       
-      <div className="space-y-4 mb-6">
+      {/* Celebration Confetti (conditionally rendered) */}
+      {showCelebration && (
+        <div className="confetti-container">
+          {/* This would be implemented with react-confetti or a similar library */}
+          <div className="confetti-animation"></div>
+        </div>
+      )}
+      
+      {/* Header with Futuristic Title */}
+      <div className="header">
+        <h2 className="title">
+         Face Registration
+        </h2>
+        <p className="subtitle">
+          Secure your identity
+        </p>
+      </div>
+      
+      {/* Form Area */}
+      <div className="form-area">
         <div className="form-group">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Username:
+          <label className="input-label">
+            Username
           </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="text-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-input"
             required
           />
         </div>
         
         <div className="form-group">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Phone Number:
+          <label className="input-label">
+            Phone Number
           </label>
           <input
             type="tel"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="text-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-input"
             required
           />
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="upload-section">
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleImageUpload}
           accept="image/png, image/jpeg, image/jpg"
-          className="hidden"
+          className="hidden-input"
         />
         
-        <button
+        {/* Drag & Drop Zone */}
+        <div 
+          ref={dropZoneRef}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`upload-zone ${isDragging ? 'dragging' : ''}`}
           onClick={() => fileInputRef.current?.click()}
-          className="upload-button bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 mb-4 w-full"
-          type="button"
         >
-          Upload your Aadhaar Card
-        </button>
+          {/* Overlay for verification animations */}
+          {(isVerifyingAadhaar || animationStage !== 'idle') && (
+            <div className="verification-overlay">
+              {isVerifyingAadhaar && renderScanningAnimation()}
+              {animationStage === 'success' && renderSuccessAnimation()}
+              {animationStage === 'error' && renderErrorAnimation()}
+              {animationStage === 'registered' && renderSuccessAnimation()}
+            </div>
+          )}
+
+          <div className="upload-content">
+            <div className="upload-icon-container">
+              <svg className={`upload-icon ${isDragging ? 'dragging' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <h3 className={`upload-heading ${isDragging ? 'dragging' : ''}`}>
+              Upload Aadhaar Card
+            </h3>
+            <p className="upload-instruction">
+              Drag & drop or click to select
+            </p>
+          </div>
+        </div>
 
         {/* Aadhaar verification status */}
-        {isVerifyingAadhaar && (
-          <div className="mb-4">
-            <LoadingIndicator message="Verifying Aadhaar card..." />
-          </div>
-        )}
-        
         {isAadhaarCard === true && !isVerifyingAadhaar && (
-          <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-600 flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          <div className="status-message success-message">
+            <p className="status-text">
+              <svg className="status-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              Valid Aadhaar card verified
+              Valid Aadhaar card verified & secured
             </p>
           </div>
         )}
         
         {isAadhaarCard === false && !isVerifyingAadhaar && (
-          <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600 flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          <div className="status-message error-message">
+            <p className="status-text">
+              <svg className="status-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              Not a valid Aadhaar card. Please upload a valid Aadhaar card.
+              Document validation failed. Please upload a valid Aadhaar card.
             </p>
           </div>
         )}
         
-        <div className="image-preview-container mb-4">
+        {/* Image Preview Area */}
+        <div className="image-preview-grid">
           {/* Original image preview */}
-          <div className="mb-2">
-            <p className="text-sm text-gray-500 mb-1">Original Image:</p>
-            <img ref={previewImageRef} alt="Preview" className="w-full hidden rounded-md border border-gray-300" />
+          <div className="preview-container">
+            <div className="preview-header">
+              Original Image
+            </div>
+            <div className="preview-content">
+              <img ref={previewImageRef} alt="Preview" className="preview-image hidden" />
+              {!selectedFile && <p className="no-image-text">No image uploaded</p>}
+            </div>
           </div>
           
           {/* Enhanced image preview */}
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Enhanced Image:</p>
-            <img ref={enhancedImageRef} alt="Enhanced" className="w-full hidden rounded-md border border-gray-300" />
+          <div className="preview-container">
+            <div className="preview-header">
+              Enhanced Image
+            </div>
+            <div className="preview-content">
+              <img ref={enhancedImageRef} alt="Enhanced" className="preview-image hidden" />
+              {isEnhancing && <LoadingIndicator message="Optimizing..." />}
+              {!enhancedImage && !isEnhancing && <p className="no-image-text">Awaiting enhancement</p>}
+            </div>
+          </div>
+        </div>
+        
+        {/* Face quality indicators */}
+        {faceQualityScore !== null && (
+          <div className="quality-analysis-container">
+            <h4 className="quality-analysis-title">Image Quality Analysis</h4>
             
-            {/* Face quality indicators */}
-            {faceQualityScore !== null && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Face Quality:</span>
+            <div className="quality-indicators">
+              <div className="quality-indicator">
+                <div className="quality-label-container">
+                  <span className="quality-label">Face Quality:</span>
                   {faceQualityScore && (
-                    <span className={`text-sm font-medium ${getQualityLabel(faceQualityScore).color}`}>
+                    <span className={`quality-value ${
+                      faceQualityScore > 0.7 ? 'high-quality' : 
+                      faceQualityScore > 0.5 ? 'good-quality' : 
+                      faceQualityScore > 0.4 ? 'medium-quality' : 
+                      faceQualityScore > 0.3 ? 'low-quality' : 'poor-quality'
+                    }`}>
                       {getQualityLabel(faceQualityScore).label} ({(faceQualityScore * 10).toFixed(1)}/10)
                     </span>
                   )}
                 </div>
-                <div className="bg-gray-200 rounded-full h-2">
+                <div className="progress-bar-background">
                   <div 
-                    className={`rounded-full h-2 ${
-                      faceQualityScore > 0.7 ? 'bg-green-500' : 
-                      faceQualityScore > 0.5 ? 'bg-green-400' : 
-                      faceQualityScore > 0.4 ? 'bg-yellow-500' : 
-                      faceQualityScore > 0.3 ? 'bg-orange-500' : 'bg-red-500'
+                    className={`progress-bar ${
+                      faceQualityScore > 0.7 ? 'high-quality' : 
+                      faceQualityScore > 0.5 ? 'good-quality' : 
+                      faceQualityScore > 0.4 ? 'medium-quality' : 
+                      faceQualityScore > 0.3 ? 'low-quality' : 'poor-quality'
                     }`} 
                     style={{ width: `${Math.max(5, faceQualityScore * 100)}%` }}
                   ></div>
                 </div>
-                
-                {/* Confidence indicator if available */}
-                {faceConfidence !== null && (
-                  <div className="mt-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Detection Confidence:</span>
-                      <span className="text-sm">{(faceConfidence * 100).toFixed(0)}%</span>
-                    </div>
-                    <div className="bg-gray-200 rounded-full h-2 mt-1">
-                      <div 
-                        className="bg-blue-500 rounded-full h-2" 
-                        style={{ width: `${Math.max(5, faceConfidence * 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )}
               </div>
-            )}
+              
+              {/* Confidence indicator if available */}
+              {faceConfidence !== null && (
+                <div className="quality-indicator">
+                  <div className="quality-label-container">
+                    <span className="quality-label">Detection Confidence:</span>
+                    <span className="confidence-value">{(faceConfidence * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="progress-bar-background">
+                    <div 
+                      className="progress-bar confidence-bar" 
+                      style={{ width: `${Math.max(5, faceConfidence * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* Face detection status */}
             {faceDetected === true && (
-              <p className="text-sm text-green-600 mt-2 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <div className="detection-status success">
+                <svg className="detection-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
-                Face detected successfully
-              </p>
+                <span className="detection-text">Facial features extracted successfully</span>
+              </div>
             )}
             
             {faceDetected === false && (
-              <p className="text-sm text-red-600 mt-2 flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <div className="detection-status error">
+                <svg className="detection-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                No face detected - try another image
-              </p>
-            )}
-
-            {/* Suitability failure reasons */}
-            {suitabilityResult && !suitabilityResult.passes && (
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm font-medium text-yellow-800">Image quality issues:</p>
-                <ul className="text-xs text-yellow-700 pl-2 mt-1">
-                  {suitabilityResult.failureReasons.map((reason, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <span className="mr-1">•</span>
-                      <span>{reason}</span>
-                    </li>
-                  ))}
-                </ul>
+                <span className="detection-text">No facial features detected</span>
               </div>
             )}
           </div>
-        </div>
+        )}
+        
+        {/* Suitability failure reasons */}
+        {suitabilityResult && !suitabilityResult.passes && (
+          <div className="warning-container">
+            <p className="warning-title">Image quality issues detected:</p>
+            <ul className="warning-list">
+              {suitabilityResult.failureReasons.map((reason, idx) => (
+                <li key={idx} className="warning-item">
+                  <span className="warning-bullet">•</span>
+                  <span>{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         
         {/* Photo recommendations */}
         {showRecommendations && photoRecommendations.length > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">For better face recognition:</h4>
-            <ul className="text-xs text-blue-700 space-y-1">
+          <div className="recommendations-container">
+            <h4 className="recommendations-title">For optimal facial authentication:</h4>
+            <ul className="recommendations-list">
               {photoRecommendations.map((tip, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="mr-1">•</span>
+                <li key={index} className="recommendation-item">
+                  <span className="recommendation-bullet">•</span>
                   <span>{tip}</span>
                 </li>
               ))}
@@ -712,50 +918,84 @@ const RegistrationPanel: React.FC<RegistrationPanelProps> = ({
           </div>
         )}
         
-        {isEnhancing && 
-          <LoadingIndicator message="Enhancing image for optimal face recognition..." />
-        }
+        {isEnhancing && (
+          <div className="enhancing-container">
+            <div className="loading-pulse-ring"></div>
+            <p className="enhancing-text">Enhancing facial pattern recognition...</p>
+          </div>
+        )}
         
         {selectedFile && !isEnhancing && (!enhancedImage || enhancementAttempts > 0) && (
-          <div className="flex gap-2 mb-4">
+          <div className="enhancement-actions">
             <button 
               onClick={retryEnhancement}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md flex-1"
+              className="action-button retry-button"
             >
-              Retry Enhancement
+              <span className="button-content">
+                <svg className="button-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Retry Enhancement
+              </span>
             </button>
             
             {enhancementAttempts > 0 && (
               <button 
                 onClick={useOriginalImage}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md flex-1"
+                className="action-button use-original-button"
               >
-                Use Original
+                <span className="button-content">
+                  <svg className="button-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Use Original
+                </span>
               </button>
             )}
           </div>
         )}
         
+        {/* Register Button */}
         <button
           onClick={registerUser}
           disabled={!isFormValid() || isRegistering || processingRegistration}
-          className={`w-full py-2 px-4 rounded-md font-medium transition duration-200 ${
+          className={`register-button ${
             isFormValid() && !isRegistering && !processingRegistration
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              ? 'active'
+              : 'disabled'
           }`}
         >
-          {isRegistering || processingRegistration ? 'Processing...' : 'Register Face'}
+          {isRegistering || processingRegistration ? (
+            <>
+              <div className="spin-loader"></div>
+              <span>Processing...</span>
+            </>
+          ) : (
+            <>
+              <svg className="register-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Register Facial Identity</span>
+            </>
+          )}
         </button>
         
-        {/* Debug information for developers */}
+        {/* Security message */}
+        <p className="security-message">
+          <svg className="security-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          Your Identity is Protected by Our Advanced Vault™
+        </p>
+        
+        {/* Debug information for developers - only shown in development */}
         {process.env.NODE_ENV === 'development' && enhancedImage && (
-          <div className="mt-4 p-3 bg-gray-100 rounded-md text-xs font-mono">
-            <p className="font-medium mb-1">Debug Info:</p>
-            <p>- Vector Length: {enhancedImage.faceDescriptor.length}</p>
-            <p>- Image Quality: {enhancedImage.quality?.toFixed(2) || 'N/A'}</p>
+          <div className="debug-container">
+            <p className="debug-title">Debug Info:</p>
+            <p className="debug-info">- Vector Length: {enhancedImage.faceDescriptor.length}</p>
+            <p className="debug-info">- Image Quality: {enhancedImage.quality?.toFixed(2) || 'N/A'}</p>
             {ImprovedFaceApiService.areModelsLoaded() && (
-              <p>- Current Threshold: {ImprovedFaceApiService.getCurrentThreshold().effective.toFixed(3)}</p>
+              <p className="debug-info">- Current Threshold: {ImprovedFaceApiService.getCurrentThreshold().effective.toFixed(3)}</p>
             )}
           </div>
         )}

@@ -479,7 +479,7 @@ const EnhancedFaceAuth: React.FC = () => {
         }}
       />
       <div className="face-auth-container">
-        <h1 className="face-auth-title">Enhanced Face Authentication System</h1>
+        <h1 className="face-auth-title">Adhaar Card Based Facial Authentication System</h1>
         
         <StatusMessage message={statusMessage} type={statusType} />
         

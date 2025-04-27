@@ -71,10 +71,16 @@ export class BlandAPIService {
         'Authorization': `Bearer ${this.apiKey}`
       };
       
+      // Set language to Hindi by default for security calls
+      const language = "hi";
+      
+      // Hindi script for the security call
+      const hindiScript = `आप एक बैंक सुरक्षा प्रणाली हैं। ग्राहक ${request.name} के खाते में संदिग्ध लॉगिन गतिविधि हुई है: ${request.description}। उन्हें सूचित करें कि: ${analysis.solution}। यह एक स्वचालित सुरक्षा कॉल है। भाषा हिंदी में बात करें। प्राकृतिक लेकिन तत्काल होना चाहिए।`;
+      
       // Enhanced Bland.ai API call configuration
       const data = {
         phone_number: phoneWithCountryCode,
-        task: `You're a bank security system. The customer ${request.name} has suspicious login activity: ${request.description}. Based on our analysis, please inform them: ${analysis.solution}. Call them to notify about this security concern. Make it clear this is an automated security call. Speak to them in ${analysis.language}. Make it Natural but urgent.`,
+        task: hindiScript,
         voice: "June",
         wait_for_greeting: false,
         record: true,
@@ -85,7 +91,7 @@ export class BlandAPIService {
         block_interruptions: false,
         max_duration: 12,
         model: "base",
-        language: analysis.language || "en", // Default to English
+        language: language, // Always Hindi
         background_track: "none",
         endpoint: "https://api.bland.ai",
         voicemail_action: "hangup"
@@ -123,14 +129,14 @@ export class BlandAPIService {
     const request: CallRequest = {
       name: userData.username,
       phone: userData.phone,
-      subject: "Security Alert: Unauthorized Access Attempt",
-      description: `There have been ${failedAttempts} failed login attempts to your account in the last 30 minutes. This might be a security breach attempt.`
+      subject: "सुरक्षा अलर्ट: अनधिकृत लॉगिन प्रयास",
+      description: `पिछले 30 मिनटों में आपके खाते में ${failedAttempts} असफल लॉगिन प्रयास हुए हैं। यह सुरक्षा उल्लंघन का प्रयास हो सकता है।`
     };
       
-    // Create analysis response object
+    // Create analysis response object with Hindi solution
     const analysis: CallAnalysis = {
-      solution: "We detected suspicious login activity on your account. As a security measure, we're calling to verify if this is you trying to log in. If not, we recommend changing your password immediately.",
-      language: "en" // Default to English
+      solution: "हमने आपके खाते में संदिग्ध लॉगिन गतिविधि का पता लगाया है। सुरक्षा उपाय के रूप में, हम यह सत्यापित करने के लिए कॉल कर रहे हैं कि क्या यह आप हैं जो लॉगिन करने की कोशिश कर रहे हैं। यदि नहीं, तो हम आपको तुरंत अपना पासवर्ड बदलने की सलाह देते हैं।",
+      language: "hi" // Set to Hindi
     };
       
     return await this.makeSecurityCall(request, analysis);
