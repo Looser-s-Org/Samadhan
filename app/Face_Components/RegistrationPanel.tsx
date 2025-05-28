@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import { enhanceImage, isImageSuitableForFaceRecognition, getFacePhotoRecommendations } from '@/app/api/ImageEnhancementService';
-import LoadingIndicator from '@/app/components/LoadingIndicator';
+import LoadingIndicator from '@/app/Face_Components/LoadingIndicator';
 import LocalStorageService from '@/app/api/LocalStorageService';
 import ImprovedFaceApiService from '@/app/api/FaceApiService';
 import { detectAadhaarCard } from '@/app/api/Verification';
